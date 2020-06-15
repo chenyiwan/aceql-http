@@ -51,6 +51,10 @@ import org.kawanfw.sql.version.Version;
  *
  * @author Nicolas de Pomereu
  *
+ * start command-line
+ *
+ * -start -port 9000 -host 127.0.0.1 -properties "g:\aceql-server.properties"
+ *
  */
 @SuppressWarnings("deprecation")
 public class WebServer {
