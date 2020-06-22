@@ -52,12 +52,11 @@ import org.kawanfw.sql.util.FrameworkDebug;
 
 /**
  * @author Nicolas de Pomereu
- *
- *         The method executeRequest() is to to be called from the SqlHttpServer
- *         Servlet and Class. <br>
- *         It will execute a client side request with a RemoteConnection
- *         connection.
- *
+ * <p>
+ * The method executeRequest() is to to be called from the SqlHttpServer
+ * Servlet and Class. <br>
+ * It will execute a client side request with a RemoteConnection
+ * connection.
  */
 public class ServerSqlDispatch {
 
@@ -67,7 +66,17 @@ public class ServerSqlDispatch {
      * Constructor
      */
     public ServerSqlDispatch() {
-	// Does nothing
+        // Does nothing
+    }
+
+    /**
+     * Method called by children Servlet for debug purpose Println is done only if
+     * class name name is in kawansoft-debug.ini
+     */
+    public static void debug(String s) {
+        if (DEBUG) {
+            System.out.println(new Date() + " " + s);
+        }
     }
 
     /**
@@ -82,202 +91,215 @@ public class ServerSqlDispatch {
      * @throws FileUploadException
      */
     public void executeRequestInTryCatch(HttpServletRequest request, HttpServletResponse response, OutputStream out)
-	    throws IOException, SQLException, FileUploadException {
+            throws IOException, SQLException, FileUploadException {
 
-	// Immediate catch if we are asking a file upload, because
-	// parameters are in unknown sequence.
-	// We know it's a upload action if it's mime Multipart
-	if (ServletFileUpload.isMultipartContent(request)) {
-	    BlobUploader blobUploader = new BlobUploader(request, response);
-	    blobUploader.blobUpload();
-	    return;
-	}
+        // Immediate catch if we are asking a file upload, because
+        // parameters are in unknown sequence.
+        // We know it's a upload action if it's mime Multipart
+        if (ServletFileUpload.isMultipartContent(request)) {
+            BlobUploader blobUploader = new BlobUploader(request, response);
+            blobUploader.blobUpload();
+            return;
+        }
 
-	debug("executeRequest Start");
+        debug("executeRequest Start");
 
-	// Prepare the response
-	response.setContentType("text/html; charset=UTF-8");
+        // Prepare the response
+        response.setContentType("text/html; charset=UTF-8");
 
-	// Get the send string
-	debug("ACTION retrieval");
+        // Get the send string
+        debug("ACTION retrieval");
 
-	String action = request.getParameter(HttpParameter.ACTION);
-	String username = request.getParameter(HttpParameter.USERNAME);
-	String database = request.getParameter(HttpParameter.DATABASE);
-	String sessionId = request.getParameter(HttpParameter.SESSION_ID);
-	String connectionId = request.getParameter(HttpParameter.CONNECTION_ID);
+        String action = request.getParameter(HttpParameter.ACTION);
+        String username = request.getParameter(HttpParameter.USERNAME);
+        String database = request.getParameter(HttpParameter.DATABASE);
+        String sessionId = request.getParameter(HttpParameter.SESSION_ID);
+        String connectionId = request.getParameter(HttpParameter.CONNECTION_ID);
 
 
-	if (action == null || action.isEmpty()) {
-	    out = response.getOutputStream();
-	    JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
-		    JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.NO_ACTION_FOUND_IN_REQUEST);
-	    ServerSqlManager.writeLine(out, errorReturn.build());
-	    return;
-	}
+        if (action == null || action.isEmpty()) {
+            out = response.getOutputStream();
+            JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
+                    JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.NO_ACTION_FOUND_IN_REQUEST);
+            ServerSqlManager.writeLine(out, errorReturn.build());
+            return;
+        }
 
-	debug("ACTION: " + action);
-	debug("test action.equals(HttpParameter.LOGIN)");
-	if (action.equals(HttpParameter.LOGIN) || action.equals(HttpParameter.CONNECT)) {
-	    ServerLoginActionSql serverLoginActionSql = new ServerLoginActionSql();
-	    serverLoginActionSql.executeAction(request, response, action);
-	    return;
-	}
+        debug("ACTION: " + action);
+        debug("test action.equals(HttpParameter.LOGIN)");
+        if (action.equals(HttpParameter.LOGIN) || action.equals(HttpParameter.CONNECT)) {
+            ServerLoginActionSql serverLoginActionSql = new ServerLoginActionSql();
+            serverLoginActionSql.executeAction(request, response, action);
+            return;
+        }
 
-	debug("ACTION : " + action);
+        debug("ACTION : " + action);
 
-	DatabaseConfigurator databaseConfigurator = ServerSqlManager.getDatabaseConfigurator(database);
+        DatabaseConfigurator databaseConfigurator = ServerSqlManager.getDatabaseConfigurator(database);
 
-	if (databaseConfigurator == null) {
-	    out = response.getOutputStream();
-	    JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
-		    JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.DATABASE_DOES_NOT_EXIST + database);
-	    ServerSqlManager.writeLine(out, errorReturn.build());
-	    return;
-	}
+        if (databaseConfigurator == null) {
+            out = response.getOutputStream();
+            JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
+                    JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.DATABASE_DOES_NOT_EXIST + database);
+            ServerSqlManager.writeLine(out, errorReturn.build());
+            return;
+        }
 
-	//
-	if (action.equals(HttpParameter.GET_CONNECTION)) {
-	    out = response.getOutputStream();
-	    connectionId = ServerLoginActionSql.getConnectionId(sessionId, request, username, database,
-		    databaseConfigurator);
-	    ServerSqlManager.writeLine(out, JsonOkReturn.build("connection_id", connectionId));
-	    return;
-	}
+        //
+        if (action.equals(HttpParameter.GET_CONNECTION)) {
+            out = response.getOutputStream();
+            connectionId = ServerLoginActionSql.getConnectionId(sessionId, request, username, database,
+                    databaseConfigurator);
+            ServerSqlManager.writeLine(out, JsonOkReturn.build("connection_id", connectionId));
+            return;
+        }
 
-	// Tests exceptions
-	ServerSqlManager.testThrowException();
+        // Tests exceptions
+        ServerSqlManager.testThrowException();
 
-	// Redirect if it's a File download request (Blobs/Clobs)
-	if (action.equals(HttpParameter.BLOB_DOWNLOAD)) {
-	    BlobDownloader blobDownloader = new BlobDownloader(request, response, username, databaseConfigurator);
-	    blobDownloader.blobDownload();
-	    return;
-	}
+        // Redirect if it's a File download request (Blobs/Clobs)
+        if (action.equals(HttpParameter.BLOB_DOWNLOAD)) {
+            BlobDownloader blobDownloader = new BlobDownloader(request, response, username, databaseConfigurator);
+            blobDownloader.blobDownload();
+            return;
+        }
 
-	// No need to get a SQL connection for getting Blob size
-	if (action.equals(HttpParameter.GET_BLOB_LENGTH)) {
-	    BlobLengthGetter blobLengthGetter = new BlobLengthGetter(request, response, username, databaseConfigurator);
-	    blobLengthGetter.getLength();
-	    return;
-	}
+        // No need to get a SQL connection for getting Blob size
+        if (action.equals(HttpParameter.GET_BLOB_LENGTH)) {
+            BlobLengthGetter blobLengthGetter = new BlobLengthGetter(request, response, username, databaseConfigurator);
+            blobLengthGetter.getLength();
+            return;
+        }
 
-	debug("Before if (action.equals(HttpParameter.LOGOUT))");
+        debug("Before if (action.equals(HttpParameter.LOGOUT))");
 
-	if (action.equals(HttpParameter.LOGOUT) || action.equals(HttpParameter.DISCONNECT)) {
-	    ServerLogout.logout(request, response, databaseConfigurator);
-	    return;
-	}
+        if (action.equals(HttpParameter.LOGOUT) || action.equals(HttpParameter.DISCONNECT)) {
+            ServerLogout.logout(request, response, databaseConfigurator);
+            return;
+        }
 
-	out = response.getOutputStream();
-	if (action.equals(HttpParameter.GET_VERSION)) {
-	    String version = new org.kawanfw.sql.version.Version.PRODUCT().server();
-	    ServerSqlManager.writeLine(out, JsonOkReturn.build("result", version));
-	    return;
-	}
+        out = response.getOutputStream();
+        if (action.equals(HttpParameter.GET_VERSION)) {
+            String version = new org.kawanfw.sql.version.Version.PRODUCT().server();
+            ServerSqlManager.writeLine(out, JsonOkReturn.build("result", version));
+            return;
+        }
 
-	// Start clean Connections thread
-	connectionStoreClean();
+        // Start clean Connections thread
+        connectionStoreClean();
 
-	Connection connection = null;
+        Connection connection = null;
 
-	try {
-	    ConnectionStore connectionStore = new ConnectionStore(username, sessionId, connectionId);
+        try {
+            ConnectionStore connectionStore = new ConnectionStore(username, sessionId, connectionId);
 
-	    // Hack to allow version 1.0 to continue to get connection
-	    if (connectionId == null || connectionId.isEmpty()) {
-		connection = connectionStore.getFirst();
-	    } else {
-		connection = connectionStore.get();
-	    }
+            // Hack to allow version 1.0 to continue to get connection
+            if (connectionId == null || connectionId.isEmpty()) {
+                connection = connectionStore.getFirst();
+            } else {
+                connection = connectionStore.get();
+            }
 
-	    if (connection == null || connection.isClosed()) {
-		JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_NOT_FOUND,
-			JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.INVALID_CONNECTION);
-		ServerSqlManager.writeLine(out, errorReturn.build());
-		return;
-	    }
+            if (connection == null || connection.isClosed()) {
+                JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_NOT_FOUND,
+                        JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.INVALID_CONNECTION);
+                ServerSqlManager.writeLine(out, errorReturn.build());
+                return;
+            }
 
-	} catch (SQLException e) {
-	    JsonErrorReturn jsonErrorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
-		    JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.UNABLE_TO_GET_A_CONNECTION,
-		    ExceptionUtils.getStackTrace(e));
-	    ServerSqlManager.writeLine(out, jsonErrorReturn.build());
-	    LoggerUtil.log(request, e);
+        } catch (SQLException e) {
+            JsonErrorReturn jsonErrorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
+                    JsonErrorReturn.ERROR_ACEQL_ERROR, JsonErrorReturn.UNABLE_TO_GET_A_CONNECTION,
+                    ExceptionUtils.getStackTrace(e));
+            ServerSqlManager.writeLine(out, jsonErrorReturn.build());
+            LoggerUtil.log(request, e);
 
-	    return;
-	}
+            return;
+        }
 
-	// Release connection in pool & remove all references
-	if (action.equals(HttpParameter.CLOSE)) {
-	    try {
-		// ConnectionCloser.freeConnection(connection,
-		// databaseConfigurator);
-		databaseConfigurator.close(connection);
-		if (connectionId == null) {
-		    connectionId = ServerLoginActionSql.getConnectionId(connection);
-		}
-		ConnectionStore connectionStore = new ConnectionStore(username, sessionId, connectionId);
-		connectionStore.remove();
-		ServerSqlManager.writeLine(out, JsonOkReturn.build());
-	    } catch (SQLException e) {
-		JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
-			JsonErrorReturn.ERROR_JDBC_ERROR, e.getMessage());
-		ServerSqlManager.writeLine(out, errorReturn.build());
-	    }
-	    return;
-	}
+        // Release connection in pool & remove all references
+        if (action.equals(HttpParameter.CLOSE)) {
+            try {
+                // ConnectionCloser.freeConnection(connection,
+                // databaseConfigurator);
+                databaseConfigurator.close(connection);
+                if (connectionId == null) {
+                    connectionId = ServerLoginActionSql.getConnectionId(connection);
+                }
+                ConnectionStore connectionStore = new ConnectionStore(username, sessionId, connectionId);
+                connectionStore.remove();
+                ServerSqlManager.writeLine(out, JsonOkReturn.build());
+            } catch (SQLException e) {
+                JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
+                        JsonErrorReturn.ERROR_JDBC_ERROR, e.getMessage());
+                ServerSqlManager.writeLine(out, errorReturn.build());
+            }
+            return;
+        }
 
-	List<SqlFirewallManager> sqlFirewallManagers = ServerSqlManager.getSqlFirewallMap().get(database);
+        if (action.equals(HttpParameter.CLEAR_WARNINGS)) {
+            try {
+                connection.clearWarnings();
+                ServerSqlManager.writeLine(out, JsonOkReturn.build());
+            } catch (SQLException e) {
+                JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
+                        JsonErrorReturn.ERROR_JDBC_ERROR, e.getMessage());
+                ServerSqlManager.writeLine(out, errorReturn.build());
+            }
+            return;
+        }
+        if (action.equals(HttpParameter.GET_METADATA)) {
+            try {
+                ServerSqlManager.writeLine(out,connection.getMetaData().toString());
+            } catch (SQLException e) {
+                JsonErrorReturn errorReturn = new JsonErrorReturn(response, HttpServletResponse.SC_BAD_REQUEST,
+                        JsonErrorReturn.ERROR_JDBC_ERROR, e.getMessage());
+                ServerSqlManager.writeLine(out, errorReturn.build());
+            }
+            return;
+        }
 
-	// Redirect if it's a metadaquery
-	if (ServletMetadataQuery.isMetadataQueryAction(action)) {
-	    MetadataQueryActionManager metadataQueryActionManager = new MetadataQueryActionManager(request, response,
-		    out, sqlFirewallManagers, connection);
-	    metadataQueryActionManager.execute();
-	    return;
-	}
 
-	if (ServerSqlDispatchUtil.isStatement(action) && !ServerSqlDispatchUtil.isStoredProcedure(request)) {
-	    ServerStatement serverStatement = new ServerStatement(request, response, sqlFirewallManagers, connection);
-	    serverStatement.executeQueryOrUpdate(out);
-	} else if (ServerSqlDispatchUtil.isStoredProcedure(request)) {
-	    ServerCallableStatement serverCallableStatement = new ServerCallableStatement(request, response,
-		    sqlFirewallManagers, connection);
-	    serverCallableStatement.executeOrExecuteQuery(out);
-	} else if (ServerSqlDispatchUtil.isConnectionModifier(action)) {
-	    TransactionUtil.setConnectionModifierAction(request, response, out, action, connection);
-	} else if (ServerSqlDispatchUtil.isSavepointModifier(action)) {
-	    SavepointUtil.setSavepointExecute(request, response, out, action, connection);
-	} else if (ServerSqlDispatchUtil.isConnectionReader(action)) {
-	    TransactionUtil.getConnectionionInfosExecute(request, response, out, action, connection);
-	} else {
-	    throw new IllegalArgumentException("Invalid Sql Action: " + action);
-	}
+        List<SqlFirewallManager> sqlFirewallManagers = ServerSqlManager.getSqlFirewallMap().get(database);
+
+        // Redirect if it's a metadaquery
+        if (ServletMetadataQuery.isMetadataQueryAction(action)) {
+            MetadataQueryActionManager metadataQueryActionManager = new MetadataQueryActionManager(request, response,
+                    out, sqlFirewallManagers, connection);
+            metadataQueryActionManager.execute();
+            return;
+        }
+
+        if (ServerSqlDispatchUtil.isStatement(action) && !ServerSqlDispatchUtil.isStoredProcedure(request)) {
+            ServerStatement serverStatement = new ServerStatement(request, response, sqlFirewallManagers, connection);
+            connection.setAutoCommit(false);
+            serverStatement.executeQueryOrUpdate(out);
+            connection.commit();
+        } else if (ServerSqlDispatchUtil.isStoredProcedure(request)) {
+            ServerCallableStatement serverCallableStatement = new ServerCallableStatement(request, response,
+                    sqlFirewallManagers, connection);
+            serverCallableStatement.executeOrExecuteQuery(out);
+        } else if (ServerSqlDispatchUtil.isConnectionModifier(action)) {
+            TransactionUtil.setConnectionModifierAction(request, response, out, action, connection);
+        } else if (ServerSqlDispatchUtil.isSavepointModifier(action)) {
+            SavepointUtil.setSavepointExecute(request, response, out, action, connection);
+        } else if (ServerSqlDispatchUtil.isConnectionReader(action)) {
+            TransactionUtil.getConnectionionInfosExecute(request, response, out, action, connection);
+        } else {
+            throw new IllegalArgumentException("Invalid Sql Action: " + action);
+        }
 
     }
-
-
 
     /**
      * Clean connection store.
      */
     private void connectionStoreClean() {
 
-	if (ConnectionStoreCleaner.timeToCleanConnectionStore()) {
-	    ConnectionStoreCleaner cleaner = new ConnectionStoreCleaner();
-	    cleaner.start();
-	}
+        if (ConnectionStoreCleaner.timeToCleanConnectionStore()) {
+            ConnectionStoreCleaner cleaner = new ConnectionStoreCleaner();
+            cleaner.start();
+        }
 
-    }
-
-    /**
-     * Method called by children Servlet for debug purpose Println is done only if
-     * class name name is in kawansoft-debug.ini
-     */
-    public static void debug(String s) {
-	if (DEBUG) {
-	    System.out.println(new Date() + " " + s);
-	}
     }
 }

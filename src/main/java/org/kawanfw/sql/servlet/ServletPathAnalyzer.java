@@ -131,6 +131,22 @@ public class ServletPathAnalyzer {
             return true;
         }
 
+
+        /***
+         *
+         *
+         */
+        if (requestUri.endsWith("/clearWarnings")) {
+            connectionModifierOrReader = "clearWarnings";
+            return true;
+        }
+
+        if (requestUri.endsWith("/getMetaData")) {
+            connectionModifierOrReader = "getMetaData";
+            return true;
+        }
+
+
         return false;
 
     }

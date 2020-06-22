@@ -55,19 +55,19 @@ import org.kawanfw.sql.util.SqlTag;
 
 /**
  * @author Nicolas de Pomereu
- *
- *         Utility classes called at Tomcat startup
+ * <p>
+ * Utility classes called at Tomcat startup
  */
 public class TomcatStarterUtil {
 
-    /** Universal and clean line separator */
-    static String CR_LF = System.getProperty("line.separator");
-
     private static final String ERROR_MESSAGE = "D" + "b" + " V" + "e" + "n"
-	    + "d" + "or" + " is" + " " + "no" + "t" + " sup" + "po" + "rt"
-	    + "ed" + " in" + " this " + "ver" + "si" + "on " + "fo" + "r Dr"
-	    + "iv" + "er: ";
-
+            + "d" + "or" + " is" + " " + "no" + "t" + " sup" + "po" + "rt"
+            + "ed" + " in" + " this " + "ver" + "si" + "on " + "fo" + "r Dr"
+            + "iv" + "er: ";
+    /**
+     * Universal and clean line separator
+     */
+    static String CR_LF = System.getProperty("line.separator");
 
 
     /**
@@ -81,90 +81,89 @@ public class TomcatStarterUtil {
      * If the user has created a driverClassName property in the properties
      * file: we create a Tomcat JDBC Pool from the properties
      *
-     * @param properties
-     *            properties extracted from the properties file
+     * @param properties properties extracted from the properties file
      * @throws DatabaseConfigurationException
      */
     public static void createAndStoreDataSources(Properties properties)
-	    throws DatabaseConfigurationException {
+            throws DatabaseConfigurationException {
 
-	if (properties == null) {
-	    throw new IllegalArgumentException("properties is null");
-	}
+        if (properties == null) {
+            throw new IllegalArgumentException("properties is null");
+        }
 
-	Set<String> databases = getDatabaseNames(properties);
+        Set<String> databases = getDatabaseNames(properties);
 
-	for (String database : databases) {
-	    createAndStoreDataSource(properties, database.trim());
-	}
+        for (String database : databases) {
+            createAndStoreDataSource(properties, database.trim());
+        }
 
     }
 
     public static void addServlets(Properties properties, Context rootCtx) {
 
-	if (properties == null) {
-	    throw new IllegalArgumentException("properties is null");
-	}
+        if (properties == null) {
+            throw new IllegalArgumentException("properties is null");
+        }
 
-	Set<String> servlets = getServlets(properties);
+        Set<String> servlets = getServlets(properties);
 
-	if (servlets.isEmpty()) {
-	    return;
-	}
+        if (servlets.isEmpty()) {
+            return;
+        }
 
-	System.out.println(SqlTag.SQL_PRODUCT_START + " Loading servlets:");
+        System.out.println(SqlTag.SQL_PRODUCT_START + " Loading servlets:");
 
-	for (String servlet : servlets) {
+        for (String servlet : servlets) {
 
-	    String servletClassName = properties
-		    .getProperty(servlet + "." + "class");
+            String servletClassName = properties
+                    .getProperty(servlet + "." + "class");
 
-	    if (servletClassName == null || servletClassName.isEmpty()) {
-		throw new IllegalArgumentException(
-			servlet + ".class" + " property not found for servlet "
-				+ servlet + ". " + SqlTag.PLEASE_CORRECT);
-	    }
+            if (servletClassName == null || servletClassName.isEmpty()) {
+                throw new IllegalArgumentException(
+                        servlet + ".class" + " property not found for servlet "
+                                + servlet + ". " + SqlTag.PLEASE_CORRECT);
+            }
 
-	    servletClassName = servletClassName.trim();
+            servletClassName = servletClassName.trim();
 
-	    String servletUrl = properties
-		    .getProperty(servlet + "." + "url-pattern");
+            String servletUrl = properties
+                    .getProperty(servlet + "." + "url-pattern");
 
-	    if (servletUrl == null || servletUrl.isEmpty()) {
-		throw new IllegalArgumentException(servlet + ".url-pattern"
-			+ " property not found for servlet " + servlet + ". "
-			+ SqlTag.PLEASE_CORRECT);
-	    }
+            if (servletUrl == null || servletUrl.isEmpty()) {
+                throw new IllegalArgumentException(servlet + ".url-pattern"
+                        + " property not found for servlet " + servlet + ". "
+                        + SqlTag.PLEASE_CORRECT);
+            }
 
-	    servletUrl = servletUrl.trim();
+            servletUrl = servletUrl.trim();
 
-	    Class<?> c = null;
-	    Servlet servletInstance = null;
+            Class<?> c = null;
+            Servlet servletInstance = null;
 
-	    try {
-		c = Class.forName(servletClassName);
+            try {
+                c = Class.forName(servletClassName);
 
-		// servletInstance = (Servlet) c.newInstance();
-		Constructor<?> constructor = c.getConstructor();
-		servletInstance = (Servlet) constructor.newInstance();
+                // servletInstance = (Servlet) c.newInstance();
+                Constructor<?> constructor = c.getConstructor();
+                servletInstance = (Servlet) constructor.newInstance();
 
-	    } catch (Exception e) {
-		throw new IllegalArgumentException("Exception when loading "
-			+ servletClassName + " (servlet " + servlet + "): "
-			+ e.toString() + ". " + SqlTag.PLEASE_CORRECT, e);
-	    }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Exception when loading "
+                        + servletClassName + " (servlet " + servlet + "): "
+                        + e.toString() + ". " + SqlTag.PLEASE_CORRECT, e);
+            }
 
-	    System.out.println(SqlTag.SQL_PRODUCT_START + "  -> Servlet "
-		    + servlet + " [url-pattern: " + servletUrl
-		    + "] successfully loaded.");
+            System.out.println(SqlTag.SQL_PRODUCT_START + "  -> Servlet "
+                    + servlet + " [url-pattern: " + servletUrl
+                    + "] successfully loaded.");
 
-	    @SuppressWarnings("unused")
-	    Wrapper wrapper = Tomcat.addServlet(rootCtx, servlet,
-		    servletInstance);
+            @SuppressWarnings("unused")
+            Wrapper wrapper = Tomcat.addServlet(rootCtx, servlet,
+                    servletInstance);
 
-	    rootCtx.addServletMappingDecoded(servletUrl, servlet);
+            rootCtx.addServletMappingDecoded(servletUrl, servlet);
 
-	}
+        }
 
     }
 
@@ -176,19 +175,19 @@ public class TomcatStarterUtil {
      */
     public static Set<String> getServlets(Properties properties) {
 
-	String servlets = properties.getProperty("servlets");
+        String servlets = properties.getProperty("servlets");
 
-	if (servlets == null || servlets.isEmpty()) {
-	    return new HashSet<>();
-	}
+        if (servlets == null || servlets.isEmpty()) {
+            return new HashSet<>();
+        }
 
-	String[] servletArray = servlets.split(",");
+        String[] servletArray = servlets.split(",");
 
-	Set<String> servletSet = new HashSet<>();
-	for (int i = 0; i < servletArray.length; i++) {
-	    servletSet.add(servletArray[i].trim());
-	}
-	return servletSet;
+        Set<String> servletSet = new HashSet<>();
+        for (int i = 0; i < servletArray.length; i++) {
+            servletSet.add(servletArray[i].trim());
+        }
+        return servletSet;
     }
 
     /**
@@ -199,344 +198,338 @@ public class TomcatStarterUtil {
      * @throws DatabaseConfigurationException
      */
     public static Set<String> getDatabaseNames(Properties properties)
-	    throws DatabaseConfigurationException {
+            throws DatabaseConfigurationException {
 
-	if (properties == null) {
-	    throw new IllegalArgumentException("properties is null");
-	}
+        if (properties == null) {
+            throw new IllegalArgumentException("properties is null");
+        }
 
-	String databases = properties.getProperty("databases");
+        String databases = properties.getProperty("databases");
 
-	if (databases == null || databases.isEmpty()) {
-	    throw new DatabaseConfigurationException(
-		    "the databases property is not set in properties file. "
-			    + SqlTag.PLEASE_CORRECT);
-	}
+        if (databases == null || databases.isEmpty()) {
+            throw new DatabaseConfigurationException(
+                    "the databases property is not set in properties file. "
+                            + SqlTag.PLEASE_CORRECT);
+        }
 
-	String[] databaseArray = databases.split(",");
+        String[] databaseArray = databases.split(",");
 
-	Set<String> databaseSet = new HashSet<>();
-	for (int i = 0; i < databaseArray.length; i++) {
-	    databaseSet.add(databaseArray[i].trim());
-	}
-	return databaseSet;
+        Set<String> databaseSet = new HashSet<>();
+        for (int i = 0; i < databaseArray.length; i++) {
+            databaseSet.add(databaseArray[i].trim());
+        }
+        return databaseSet;
     }
 
     /**
      * If the user has created a driverClassName property in the properties
      * file: we create a Tomcat JDBC Pool from the properties
      *
-     * @param properties
-     *            properties extracted from the properties file
-     * @param database
-     *            the database name for which to set the properties
+     * @param properties properties extracted from the properties file
+     * @param database   the database name for which to set the properties
      * @throws DatabaseConfigurationException
      */
     public static void createAndStoreDataSource(Properties properties,
-	    String database) throws DatabaseConfigurationException {
+                                                String database) throws DatabaseConfigurationException {
 
-	if (properties == null) {
-	    throw new IllegalArgumentException("properties is null");
-	}
+        if (properties == null) {
+            throw new IllegalArgumentException("properties is null");
+        }
 
-	if (database == null) {
-	    throw new IllegalArgumentException("database is null");
-	}
+        if (database == null) {
+            throw new IllegalArgumentException("database is null");
+        }
 
-	database = database.trim();
-	String driverClassName = properties
-		.getProperty(database + "." + "driverClassName");
+        database = database.trim();
+        String driverClassName = properties
+                .getProperty(database + "." + "driverClassName");
 
-	if (driverClassName == null || driverClassName.isEmpty()) {
-	    System.err.println(SqlTag.SQL_PRODUCT_START
-		    + " WARNING: driverClassName"
-		    + " property not found for database " + database + "! ");
-	    System.err.println(SqlTag.SQL_PRODUCT_START
-		    + "          Connection management must be defined in DatabaseConfigurator.getConnection(String database)");
-	    return;
-	}
+        if (driverClassName == null || driverClassName.isEmpty()) {
+            System.err.println(SqlTag.SQL_PRODUCT_START
+                    + " WARNING: driverClassName"
+                    + " property not found for database " + database + "! ");
+            System.err.println(SqlTag.SQL_PRODUCT_START
+                    + "          Connection management must be defined in DatabaseConfigurator.getConnection(String database)");
+            return;
+        }
 
-	String url = properties.getProperty(database + "." + "url");
+        String url = properties.getProperty(database + "." + "url");
 
-	if ((url == null) || url.isEmpty()) {
-	    throw new DatabaseConfigurationException(
-		    "the url property is not set in properties file for driverClassName "
-			    + driverClassName + ". " + SqlTag.PLEASE_CORRECT);
-	}
+        if ((url == null) || url.isEmpty()) {
+            throw new DatabaseConfigurationException(
+                    "the url property is not set in properties file for driverClassName "
+                            + driverClassName + ". " + SqlTag.PLEASE_CORRECT);
+        }
 
-	String username = properties.getProperty(database + "." + "username");
-	if ((username == null) || username.isEmpty()) {
-	    throw new DatabaseConfigurationException(
-		    "the username property is not set in properties file for driverClassName "
-			    + driverClassName + ". " + SqlTag.PLEASE_CORRECT);
-	}
+        String username = properties.getProperty(database + "." + "username");
+        if ((username == null) || username.isEmpty()) {
+            throw new DatabaseConfigurationException(
+                    "the username property is not set in properties file for driverClassName "
+                            + driverClassName + ". " + SqlTag.PLEASE_CORRECT);
+        }
 
-	String password = properties.getProperty(database + "." + "password");
-	if ((password == null) || password.isEmpty()) {
-	    throw new DatabaseConfigurationException(
-		    "the password property is not set in properties file for driverClassName "
-			    + driverClassName + ". " + SqlTag.PLEASE_CORRECT);
-	}
+        String password = properties.getProperty(database + "." + "password");
+        if ((password == null) || password.isEmpty()) {
+            throw new DatabaseConfigurationException(
+                    "the password property is not set in properties file for driverClassName "
+                            + driverClassName + ". " + SqlTag.PLEASE_CORRECT);
+        }
 
-	System.out.println(SqlTag.SQL_PRODUCT_START
-		+ " Setting Tomcat JDBC Pool attributes for " + database
-		+ " database:");
+        System.out.println(SqlTag.SQL_PRODUCT_START
+                + " Setting Tomcat JDBC Pool attributes for " + database
+                + " database:");
 
-	// OK! create and test the DataSource
-	PoolPropertiesCreator poolPropertiesCreator = new PoolPropertiesCreator(
-		properties, database);
-	PoolProperties poolProperties = null;
+        // OK! create and test the DataSource
+        PoolPropertiesCreator poolPropertiesCreator = new PoolPropertiesCreator(
+                properties, database);
+        PoolProperties poolProperties = null;
 
-	try {
-	    poolProperties = poolPropertiesCreator.create();
-	} catch (Exception e) {
-	    throw new DatabaseConfigurationException(e.getMessage());
-	}
+        try {
+            poolProperties = poolPropertiesCreator.create();
+        } catch (Exception e) {
+            throw new DatabaseConfigurationException(e.getMessage());
+        }
 
-	DataSource dataSource = new DataSource();
-	dataSource.setPoolProperties(poolProperties);
+        DataSource dataSource = new DataSource();
+        dataSource.setPoolProperties(poolProperties);
 
-	Connection connection = null;
+        Connection connection = null;
 
-	try {
-	    try {
-		System.out.println(SqlTag.SQL_PRODUCT_START
-			+ " Testing DataSource.getConnection() for " + database
-			+ " database:");
-		connection = dataSource.getConnection();
+        try {
+            try {
+                System.out.println(SqlTag.SQL_PRODUCT_START
+                        + " Testing DataSource.getConnection() for " + database
+                        + " database:");
+                connection = dataSource.getConnection();
 
-		// Connection connection2 = dataSource.getConnection();
-		// System.out.println("dataSource.getActive()): " +
-		// dataSource.getActive());
-		// connection2.close();
+                // Connection connection2 = dataSource.getConnection();
+                // System.out.println("dataSource.getActive()): " +
+                // dataSource.getActive());
+                // connection2.close();
 
-		if (connection == null) {
-		    throw new DatabaseConfigurationException(
-			    "Connection is null. Please verify all the values in properties file.");
-		}
+                if (connection == null) {
+                    throw new DatabaseConfigurationException(
+                            "Connection is null. Please verify all the values in properties file.");
+                }
 
-		// Futur usage
-		// Checks that DB Vendor is supported
-		boolean isOk = DbEngineManager.checkDb(properties, connection);
-		if (!isOk) {
-		    System.err.println(ERROR_MESSAGE + driverClassName);
-		    TomcatSqlModeStore.setDataSource(database, null);
-		    return;
-		}
+                // Futur usage
+                // Checks that DB Vendor is supported
+                boolean isOk = DbEngineManager.checkDb(properties, connection);
+                if (!isOk) {
+                    System.err.println(ERROR_MESSAGE + driverClassName);
+                    TomcatSqlModeStore.setDataSource(database, null);
+                    return;
+                }
 
-		System.out.println(
-			SqlTag.SQL_PRODUCT_START + "  -> Connection OK!");
+                System.out.println(
+                        SqlTag.SQL_PRODUCT_START + "  -> Connection OK!");
 
-	    } catch (SQLException e) {
-		throw new DatabaseConfigurationException(
-			e.getMessage() + " " + e.getCause());
-	    }
-	} finally {
-	    if (connection != null) {
-		try {
-		    connection.close();
-		} catch (Exception e) {
-		    e.printStackTrace();
-		}
-	    }
-	}
+            } catch (SQLException e) {
+                throw new DatabaseConfigurationException(
+                        e.getMessage() + " " + e.getCause());
+            }
+        } finally {
+            if (connection != null) {
+                try {
+                    connection.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
-	TomcatSqlModeStore.setDataSource(database, dataSource);
+        //启动监控连接池连接线程
+        new Thread(new PoolMonitor(dataSource,1000L*20)).start();
+        TomcatSqlModeStore.setDataSource(database, dataSource);
 
     }
 
     /**
      * Returns the Properties extracted from a file.
      *
-     * @param file
-     *            the file containing the properties
+     * @param file the file containing the properties
      * @return the Properties extracted from the file
-     *
      * @throws IOException
      * @throws DatabaseConfigurationException
      */
     public static Properties getProperties(File file)
-	    throws IOException, DatabaseConfigurationException {
+            throws IOException, DatabaseConfigurationException {
 
-	if (file == null) {
-	    throw new IllegalArgumentException("file can not be null!");
-	}
+        if (file == null) {
+            throw new IllegalArgumentException("file can not be null!");
+        }
 
-	if (!file.exists()) {
-	    throw new DatabaseConfigurationException(
-		    "properties file not found: " + file);
-	}
+        if (!file.exists()) {
+            throw new DatabaseConfigurationException(
+                    "properties file not found: " + file);
+        }
 
-	// Get the properties with order of position in file:
-	Set<String> linkedProperties = LinkedProperties
-		.getLinkedPropertiesName(file);
+        // Get the properties with order of position in file:
+        Set<String> linkedProperties = LinkedProperties
+                .getLinkedPropertiesName(file);
 
-	// Create the ordered properties
-	Properties properties;
+        // Create the ordered properties
+        Properties properties;
 
-	try (InputStream in = new FileInputStream(file);) {
-	    properties = new LinkedProperties(linkedProperties);
-	    properties.load(in);
-	}
+        try (InputStream in = new FileInputStream(file)) {
+            properties = new LinkedProperties(linkedProperties);
+            properties.load(in);
+        }
 
-	return properties;
+        return properties;
     }
 
     /**
      * Set the servlet parameters store with the values extracted from the
      * Properties.
      *
-     * @param properties
-     *            Properties extracted from the server-sql.properties files
+     * @param properties Properties extracted from the server-sql.properties files
      * @throws IllegalArgumentException
      */
     public static void setInitParametersInStore(Properties properties)
-	    throws IllegalArgumentException {
+            throws IllegalArgumentException {
 
-	ServletParametersStore.init(); // Set back to null static values
+        ServletParametersStore.init(); // Set back to null static values
 
-	String aceQLManagerServletCallName = TomcatStarterUtil
-		.getAceQLManagerSevletName(properties);
+        String aceQLManagerServletCallName = TomcatStarterUtil
+                .getAceQLManagerSevletName(properties);
 
-	ServletParametersStore.setServletName(aceQLManagerServletCallName);
-	Set<String> databases = getDatabaseNames(properties);
-	ServletParametersStore.setDatabaseNames(databases);
+        ServletParametersStore.setServletName(aceQLManagerServletCallName);
+        Set<String> databases = getDatabaseNames(properties);
+        ServletParametersStore.setDatabaseNames(databases);
 
-	String userAuthenticatorClassName = TomcatStarterUtil
-		.trimSafe(properties.getProperty(ServerSqlManager.USER_AUTHENTICATOR_CLASS_NAME));
-	if (userAuthenticatorClassName != null && ! userAuthenticatorClassName.isEmpty()) {
-	    ServletParametersStore.setUserAuthenticatorClassName(userAuthenticatorClassName);
-	}
+        String userAuthenticatorClassName = TomcatStarterUtil
+                .trimSafe(properties.getProperty(ServerSqlManager.USER_AUTHENTICATOR_CLASS_NAME));
+        if (userAuthenticatorClassName != null && !userAuthenticatorClassName.isEmpty()) {
+            ServletParametersStore.setUserAuthenticatorClassName(userAuthenticatorClassName);
+        }
 
-	for (String database : databases) {
-	    // Set the configurator to use for this database
-	    String databaseConfiguratorClassName = TomcatStarterUtil
-		    .trimSafe(properties.getProperty(
-			    database + "." + ServerSqlManager.DATABASE_CONFIGURATOR_CLASS_NAME));
+        for (String database : databases) {
+            // Set the configurator to use for this database
+            String databaseConfiguratorClassName = TomcatStarterUtil
+                    .trimSafe(properties.getProperty(
+                            database + "." + ServerSqlManager.DATABASE_CONFIGURATOR_CLASS_NAME));
 
-	    if (databaseConfiguratorClassName != null
-		    && !databaseConfiguratorClassName.isEmpty()) {
-		ServletParametersStore.setInitParameter(database,
-			new InitParamNameValuePair(
-				ServerSqlManager.DATABASE_CONFIGURATOR_CLASS_NAME,
-				databaseConfiguratorClassName));
-	    }
+            if (databaseConfiguratorClassName != null
+                    && !databaseConfiguratorClassName.isEmpty()) {
+                ServletParametersStore.setInitParameter(database,
+                        new InitParamNameValuePair(
+                                ServerSqlManager.DATABASE_CONFIGURATOR_CLASS_NAME,
+                                databaseConfiguratorClassName));
+            }
 
-	    String sqlFirewallClassNameArray = TomcatStarterUtil
-		    .trimSafe(properties.getProperty(
-			    database + "." + ServerSqlManager.SQL_FIREWALL_MANAGER_CLASS_NAMES));
+            String sqlFirewallClassNameArray = TomcatStarterUtil
+                    .trimSafe(properties.getProperty(
+                            database + "." + ServerSqlManager.SQL_FIREWALL_MANAGER_CLASS_NAMES));
 
-	    if (sqlFirewallClassNameArray != null && ! sqlFirewallClassNameArray.isEmpty()) {
-		List<String> sqlFirewallClassNames = TomcatStarterUtilFirewall.getList(sqlFirewallClassNameArray);
-		ServletParametersStore.setSqlFirewallClassNames(database, sqlFirewallClassNames);
-	    }
-	    else {
-		ServletParametersStore.setSqlFirewallClassNames(database, new ArrayList<String>());
-	    }
-	}
+            if (sqlFirewallClassNameArray != null && !sqlFirewallClassNameArray.isEmpty()) {
+                List<String> sqlFirewallClassNames = TomcatStarterUtilFirewall.getList(sqlFirewallClassNameArray);
+                ServletParametersStore.setSqlFirewallClassNames(database, sqlFirewallClassNames);
+            } else {
+                ServletParametersStore.setSqlFirewallClassNames(database, new ArrayList<String>());
+            }
+        }
 
-	String blobDownloadConfiguratorClassName = TomcatStarterUtil
-		.trimSafe(properties.getProperty(
-			ServerSqlManager.BLOB_DOWNLOAD_CONFIGURATOR_CLASS_NAME));
-	ServletParametersStore.setBlobDownloadConfiguratorClassName(
-		blobDownloadConfiguratorClassName);
+        String blobDownloadConfiguratorClassName = TomcatStarterUtil
+                .trimSafe(properties.getProperty(
+                        ServerSqlManager.BLOB_DOWNLOAD_CONFIGURATOR_CLASS_NAME));
+        ServletParametersStore.setBlobDownloadConfiguratorClassName(
+                blobDownloadConfiguratorClassName);
 
-	String blobUploadConfiguratorClassName = TomcatStarterUtil
-		.trimSafe(properties.getProperty(
-			ServerSqlManager.BLOB_UPLOAD_CONFIGURATOR_CLASS_NAME));
-	ServletParametersStore.setBlobUploadConfiguratorClassName(
-		blobUploadConfiguratorClassName);
+        String blobUploadConfiguratorClassName = TomcatStarterUtil
+                .trimSafe(properties.getProperty(
+                        ServerSqlManager.BLOB_UPLOAD_CONFIGURATOR_CLASS_NAME));
+        ServletParametersStore.setBlobUploadConfiguratorClassName(
+                blobUploadConfiguratorClassName);
 
-	String sessionConfiguratorClassName = TomcatStarterUtil
-		.trimSafe(properties.getProperty(
-			ServerSqlManager.SESSION_CONFIGURATOR_CLASS_NAME));
-	ServletParametersStore
-		.setSessionConfiguratorClassName(sessionConfiguratorClassName);
+        String sessionConfiguratorClassName = TomcatStarterUtil
+                .trimSafe(properties.getProperty(
+                        ServerSqlManager.SESSION_CONFIGURATOR_CLASS_NAME));
+        ServletParametersStore
+                .setSessionConfiguratorClassName(sessionConfiguratorClassName);
 
-	String jwtSessionConfiguratorSecretValue = TomcatStarterUtil
-		.trimSafe(properties.getProperty(
-			ServerSqlManager.JWT_SESSION_CONFIGURATOR_SECRET));
+        String jwtSessionConfiguratorSecretValue = TomcatStarterUtil
+                .trimSafe(properties.getProperty(
+                        ServerSqlManager.JWT_SESSION_CONFIGURATOR_SECRET));
 
-	ServletParametersStore.setJwtSessionConfiguratorSecretValue(
-		jwtSessionConfiguratorSecretValue);
+        ServletParametersStore.setJwtSessionConfiguratorSecretValue(
+                jwtSessionConfiguratorSecretValue);
     }
 
     /**
      * Safely trim a String
      *
-     * @param s
-     *            the String to trim
+     * @param s the String to trim
      * @return
      */
     public static String trimSafe(String s) {
-	if (s != null) {
-	    s = s.trim();
-	}
+        if (s != null) {
+            s = s.trim();
+        }
 
-	return s;
+        return s;
     }
 
     /**
      * Checks to see if a specific port is available.
      *
-     * @param port
-     *            the port to check for availability
+     * @param port the port to check for availability
      */
     public static boolean available(int port) {
 
-	ServerSocket ss = null;
-	DatagramSocket ds = null;
-	try {
-	    ss = new ServerSocket(port);
-	    ss.setReuseAddress(true);
-	    ds = new DatagramSocket(port);
-	    ds.setReuseAddress(true);
-	    return true;
-	} catch (IOException e) {
-	    // e.printStackTrace();
-	} finally {
-	    if (ds != null) {
-		ds.close();
-	    }
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+            return true;
+        } catch (IOException e) {
+            // e.printStackTrace();
+        } finally {
+            if (ds != null) {
+                ds.close();
+            }
 
-	    if (ss != null) {
-		try {
-		    ss.close();
-		} catch (IOException e) {
-		    /* should not be thrown */
-		}
-	    }
-	}
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException e) {
+                    /* should not be thrown */
+                }
+            }
+        }
 
-	return false;
+        return false;
     }
 
     static String getAceQLManagerSevletName(Properties properties) {
-	String aceQLManagerServletCallName = properties
-		.getProperty("aceQLManagerServletCallName");
+        String aceQLManagerServletCallName = properties
+                .getProperty("aceQLManagerServletCallName");
 
-	// Support old name:
-	if (aceQLManagerServletCallName == null
-		|| aceQLManagerServletCallName.isEmpty()) {
-	    aceQLManagerServletCallName = properties
-		    .getProperty("serverSqlManagerServletName");
-	}
+        // Support old name:
+        if (aceQLManagerServletCallName == null
+                || aceQLManagerServletCallName.isEmpty()) {
+            aceQLManagerServletCallName = properties
+                    .getProperty("serverSqlManagerServletName");
+        }
 
-	if (aceQLManagerServletCallName == null
-		|| aceQLManagerServletCallName.isEmpty()) {
-	    throw new DatabaseConfigurationException(
-		    "aceQLManagerServletCallName property is null. "
-			    + SqlTag.PLEASE_CORRECT);
-	}
+        if (aceQLManagerServletCallName == null
+                || aceQLManagerServletCallName.isEmpty()) {
+            throw new DatabaseConfigurationException(
+                    "aceQLManagerServletCallName property is null. "
+                            + SqlTag.PLEASE_CORRECT);
+        }
 
-	if (aceQLManagerServletCallName.contains("/")) {
-	    throw new DatabaseConfigurationException(
-		    "aceQLManagerServletCallName property can not contain \"/\" separator. "
-			    + SqlTag.PLEASE_CORRECT);
-	}
+        if (aceQLManagerServletCallName.contains("/")) {
+            throw new DatabaseConfigurationException(
+                    "aceQLManagerServletCallName property can not contain \"/\" separator. "
+                            + SqlTag.PLEASE_CORRECT);
+        }
 
-	aceQLManagerServletCallName = aceQLManagerServletCallName.trim();
-	return aceQLManagerServletCallName;
+        aceQLManagerServletCallName = aceQLManagerServletCallName.trim();
+        return aceQLManagerServletCallName;
     }
 
 }

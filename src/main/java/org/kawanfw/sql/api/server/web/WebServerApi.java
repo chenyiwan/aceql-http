@@ -39,7 +39,6 @@ import org.kawanfw.sql.util.SqlTag;
 import org.kawanfw.sql.version.Version;
 
 /**
- *
  * APIs to start and stop the embedded Web Server from a Java program. <br>
  * <br>
  * Note that the {@code org.kawanfw.sql.WebServer} class is used to start and stop
@@ -47,174 +46,158 @@ import org.kawanfw.sql.version.Version;
  * Source code is available here:&nbsp; <a href="http://www.aceql.com/rest/soft/1.0/src/WebServer.java">WebServer.java</a>.
  *
  * @author Nicolas de Pomereu
- *
  */
 public class WebServerApi {
 
-	/** The default port to use if parameter is not passed */
-	public static final int DEFAULT_PORT = 9090;
+    /**
+     * The default port to use if parameter is not passed
+     */
+    public static final int DEFAULT_PORT = 9090;
 
-	private static boolean DEBUG = FrameworkDebug.isSet(WebServerApi.class);
+    private static boolean DEBUG = FrameworkDebug.isSet(WebServerApi.class);
 
-	/** Universal and clean line separator */
-	private static String CR_LF = System.getProperty("line.separator");
+    /**
+     * Universal and clean line separator
+     */
+    private static String CR_LF = System.getProperty("line.separator");
 
-	/**
-	 * Constructor.
-	 */
-	public WebServerApi() {
+    /**
+     * Constructor.
+     */
+    public WebServerApi() {
 
-	}
+    }
 
-	/**
-	 * Starts the embedded Web Server.
-	 *
-	 * @param host
-	 *            the host of the Web Server
-	 * @param port
-	 *            the port of the Web Server
-	 * @param propertiesFile
-	 *            properties file to use for configuration of the Web Server
-	 *
-	 * @throws ConnectException
-	 *             if the port is not available
-	 * @throws IOException
-	 *             if an IOException occurs
-	 * @throws DatabaseConfigurationException
-	 *             if there is a configuration error, either in Configurators or in
-	 *             the <code>server-sql.properties</code> file
-	 * @throws LifecycleException
-	 *             thrown by the embedded Tomcat engine for any lifecycle related
-	 *             problem
-	 */
-	public void startServer(String host, int port, File propertiesFile)
-			throws ConnectException, IOException, DatabaseConfigurationException, LifecycleException {
+    /**
+     * debug
+     */
+    private static void debug(String s) {
+        if (DEBUG) {
+            System.out.println(s);
+        }
+    }
 
-		debug("propertiesFiles: " + propertiesFile);
+    /**
+     * Starts the embedded Web Server.
+     *
+     * @param host           the host of the Web Server
+     * @param port           the port of the Web Server
+     * @param propertiesFile properties file to use for configuration of the Web Server
+     * @throws ConnectException               if the port is not available
+     * @throws IOException                    if an IOException occurs
+     * @throws DatabaseConfigurationException if there is a configuration error, either in Configurators or in
+     *                                        the <code>server-sql.properties</code> file
+     * @throws LifecycleException             thrown by the embedded Tomcat engine for any lifecycle related
+     *                                        problem
+     */
+    public void startServer(String host, int port, File propertiesFile)
+            throws ConnectException, IOException, DatabaseConfigurationException, LifecycleException {
 
-		if (host == null) {
-			throw new DatabaseConfigurationException("host parameter can not be null.");
-		}
+        debug("propertiesFiles: " + propertiesFile);
 
-		if (port <= 0) {
-			throw new DatabaseConfigurationException("port parameter can not be null.");
-		}
+        if (host == null) {
+            throw new DatabaseConfigurationException("host parameter can not be null.");
+        }
 
-		if (propertiesFile == null) {
-			throw new DatabaseConfigurationException("propertiesFile parameter can not be null.");
-		}
+        if (port <= 0) {
+            throw new DatabaseConfigurationException("port parameter can not be null.");
+        }
 
-		if (!propertiesFile.exists()) {
-			throw new DatabaseConfigurationException(
-					"The properties file " + propertiesFile + " does not exists. " + SqlTag.PLEASE_CORRECT);
-		}
+        if (propertiesFile == null) {
+            throw new DatabaseConfigurationException("propertiesFile parameter can not be null.");
+        }
 
-		if (!TomcatStarterUtil.available(port)) {
-			throw new ConnectException(
-					"The port " + port + " is not available for starting Web server. " + SqlTag.PLEASE_CORRECT);
-		}
+        if (!propertiesFile.exists()) {
+            throw new DatabaseConfigurationException(
+                    "The properties file " + propertiesFile + " does not exists. " + SqlTag.PLEASE_CORRECT);
+        }
 
-		PortSemaphoreFile portSemaphoreFile = new PortSemaphoreFile(port);
+        if (!TomcatStarterUtil.available(port)) {
+            throw new ConnectException(
+                    "The port " + port + " is not available for starting Web server. " + SqlTag.PLEASE_CORRECT);
+        }
 
-		try {
-			if (!portSemaphoreFile.exists()) {
-				portSemaphoreFile.create();
-			}
-		} catch (IOException e) {
-			throw new IOException("Web server can not start. Impossible to create the semaphore file: "
-					+ portSemaphoreFile.getSemaphoreFile() + CR_LF
-					+ "Create manually the semapahore file to start the Web server on port " + port + ".", e);
-		}
+        PortSemaphoreFile portSemaphoreFile = new PortSemaphoreFile(port);
 
-		// Do not use SecureRandom class
-		if (SystemUtils.IS_OS_UNIX) {
-			System.setProperty("java.security.egd", "file:/dev/./urandom");
-			debug("java.security.egd: " + System.getProperty("java.security.egd"));
-		}
+        try {
+            if (!portSemaphoreFile.exists()) {
+                portSemaphoreFile.create();
+            }
+        } catch (IOException e) {
+            throw new IOException("Web server can not start. Impossible to create the semaphore file: "
+                    + portSemaphoreFile.getSemaphoreFile() + CR_LF
+                    + "Create manually the semapahore file to start the Web server on port " + port + ".", e);
+        }
 
-		// OK build the Servlet
-		TomcatStarter tomcatStarter = new TomcatStarter(host, port, propertiesFile);
-		tomcatStarter.startTomcat();
+        // Do not use SecureRandom class
+        if (SystemUtils.IS_OS_UNIX) {
+            System.setProperty("java.security.egd", "file:/dev/./urandom");
+            debug("java.security.egd: " + System.getProperty("java.security.egd"));
+        }
 
-	}
+        // OK build the Servlet
+        TomcatStarter tomcatStarter = new TomcatStarter(host, port, propertiesFile);
+        tomcatStarter.startTomcat();
 
-	/**
-	 * Starts the embedded Web Server on the default port
-	 * {@link WebServerApi#DEFAULT_PORT}.
-	 *
-	 * @param host
-	 *            the host of the Web Server
-	 * @param propertiesFile
-	 *            properties file to use for configuration of the Web Server
-	 *
-	 * @throws ConnectException
-	 *             if the default port is not available
-	 * @throws IOException
-	 *             if an IOException occurs
-	 * @throws DatabaseConfigurationException
-	 *             if there is a configuration error, either in Configurators or in
-	 *             the <code>server-sql.properties</code> file
-	 * @throws LifecycleException
-	 *             thrown by embedded Tomcat for any lifecycle related problem
-	 */
-	public void startServer(String host, File propertiesFile)
-			throws ConnectException, IOException, DatabaseConfigurationException, LifecycleException {
-		startServer(host, DEFAULT_PORT, propertiesFile);
-	}
+    }
 
-	/**
-	 * Stops the embedded Web server running on the default port
-	 * {@link WebServerApi#DEFAULT_PORT}.
-	 *
-	 * @throws IOException
-	 *             if the semaphore file (that signals to the SQL Web Server to
-	 *             stop) can not be created
-	 */
-	public void stopServer() throws IOException {
+    /**
+     * Starts the embedded Web Server on the default port
+     * {@link WebServerApi#DEFAULT_PORT}.
+     *
+     * @param host           the host of the Web Server
+     * @param propertiesFile properties file to use for configuration of the Web Server
+     * @throws ConnectException               if the default port is not available
+     * @throws IOException                    if an IOException occurs
+     * @throws DatabaseConfigurationException if there is a configuration error, either in Configurators or in
+     *                                        the <code>server-sql.properties</code> file
+     * @throws LifecycleException             thrown by embedded Tomcat for any lifecycle related problem
+     */
+    public void startServer(String host, File propertiesFile)
+            throws ConnectException, IOException, DatabaseConfigurationException, LifecycleException {
+        startServer(host, DEFAULT_PORT, propertiesFile);
+    }
 
-		stopServer(DEFAULT_PORT);
-	}
+    /**
+     * Stops the embedded Web server running on the default port
+     * {@link WebServerApi#DEFAULT_PORT}.
+     *
+     * @throws IOException if the semaphore file (that signals to the SQL Web Server to
+     *                     stop) can not be created
+     */
+    public void stopServer() throws IOException {
 
-	/**
-	 * Stops the embedded Web server running on the designated port.
-	 *
-	 * @param port
-	 *            the port on which the SQL Web server is running
-	 *
-	 * @throws IOException
-	 *             if the semaphore file (that signals to the Web Server to stop)
-	 *             can not be created
-	 */
-	public void stopServer(int port) throws IOException {
+        stopServer(DEFAULT_PORT);
+    }
 
-		PortSemaphoreFile portSemaphoreFile = new PortSemaphoreFile(port);
+    /**
+     * Stops the embedded Web server running on the designated port.
+     *
+     * @param port the port on which the SQL Web server is running
+     * @throws IOException if the semaphore file (that signals to the Web Server to stop)
+     *                     can not be created
+     */
+    public void stopServer(int port) throws IOException {
 
-		if (!portSemaphoreFile.exists()) {
-			throw new ConnectException(
-					"WARNING! There is no " + Version.PRODUCT.NAME + " Web server running on port " + port);
-		}
+        PortSemaphoreFile portSemaphoreFile = new PortSemaphoreFile(port);
 
-		// Always Force the deletion of the semaphore file:
-		try {
-			portSemaphoreFile.delete();
-		} catch (IOException ioe) {
-			throw new IOException("Can not stop the Web server. Please delete manually the semaphore file "
-					+ portSemaphoreFile.getSemaphoreFile() + " and then retry. ", ioe);
-		}
+        if (!portSemaphoreFile.exists()) {
+            throw new ConnectException(
+                    "WARNING! There is no " + Version.PRODUCT.NAME + " Web server running on port " + port);
+        }
 
-		if (TomcatStarterUtil.available(port)) {
-			throw new ConnectException("WARNING! There is no SQL Web server running on port " + port);
-		}
+        // Always Force the deletion of the semaphore file:
+        try {
+            portSemaphoreFile.delete();
+        } catch (IOException ioe) {
+            throw new IOException("Can not stop the Web server. Please delete manually the semaphore file "
+                    + portSemaphoreFile.getSemaphoreFile() + " and then retry. ", ioe);
+        }
 
-	}
+        if (TomcatStarterUtil.available(port)) {
+            throw new ConnectException("WARNING! There is no SQL Web server running on port " + port);
+        }
 
-	/**
-	 * debug
-	 */
-	private static void debug(String s) {
-		if (DEBUG) {
-			System.out.println(s);
-		}
-	}
+    }
 
 }

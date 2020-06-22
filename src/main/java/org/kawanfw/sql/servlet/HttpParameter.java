@@ -151,6 +151,8 @@ public class HttpParameter {
 
 
 
+    public static final String CLEAR_WARNINGS = "clearWarnings";
+    public static final String GET_METADATA = "getMetaData";
 
 
 }
