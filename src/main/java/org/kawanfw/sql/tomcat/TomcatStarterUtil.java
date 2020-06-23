@@ -293,6 +293,8 @@ public class TomcatStarterUtil {
         DataSource dataSource = new DataSource();
         dataSource.setPoolProperties(poolProperties);
 
+        ConnectionTempPool.initPoolProperties(poolProperties);
+
         Connection connection = null;
 
         try {

@@ -40,9 +40,11 @@ import javax.sql.DataSource;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
+import org.apache.tomcat.jdbc.pool.PoolExhaustedException;
 import org.kawanfw.sql.api.server.util.NoFormatter;
 import org.kawanfw.sql.api.server.util.UsernameConverter;
 import org.kawanfw.sql.servlet.ServerSqlManager;
+import org.kawanfw.sql.tomcat.ConnectionTempPool;
 import org.kawanfw.sql.tomcat.TomcatSqlModeStore;
 import org.kawanfw.sql.tomcat.TomcatStarterUtil;
 import org.kawanfw.sql.util.Tag;
@@ -62,12 +64,12 @@ import org.kawanfw.sql.util.Tag;
  */
 public class DefaultDatabaseConfigurator implements DatabaseConfigurator {
 
-    /** The map of data sources to use for connection pooling */
-    private Map<String, DataSource> dataSourceSet = new ConcurrentHashMap<>();
-
-    private Properties properties = null;
-
     private static Logger ACEQL_LOGGER = null;
+    /**
+     * The map of data sources to use for connection pooling
+     */
+    private Map<String, DataSource> dataSourceSet = new ConcurrentHashMap<>();
+    private Properties properties = null;
 
     /**
      * Constructor. {@code DatabaseConfigurator} implementation must have no
@@ -89,42 +91,50 @@ public class DefaultDatabaseConfigurator implements DatabaseConfigurator {
      * AceQL.
      *
      * @param database the database name to extract the {@code Connection} for.
-     *
      * @return the {@code Connection} extracted from Tomcat JDBC Connection Pool.
      */
     @Override
     public Connection getConnection(String database) throws SQLException {
 
-	DataSource dataSource = dataSourceSet.get(database);
+        DataSource dataSource = dataSourceSet.get(database);
 
-	if (dataSource == null) {
+        if (dataSource == null) {
 
-	    dataSource = TomcatSqlModeStore.getDataSource(database);
+            dataSource = TomcatSqlModeStore.getDataSource(database);
 
-	    if (dataSource == null) {
+            if (dataSource == null) {
 
-		if (TomcatSqlModeStore.isTomcatEmbedded()) {
+                if (TomcatSqlModeStore.isTomcatEmbedded()) {
 
-		    String message = Tag.PRODUCT_USER_CONFIG_FAIL
-			    + " the \"driverClassName\" property is not defined in the properties file for database "
-			    + database + " or the Db Vendor is not supported in this version.";
-		    // ServerLogger.getLogger().log(Level.WARNING, message);
-		    throw new SQLException(message);
-		} else {
-		    String message = Tag.PRODUCT_USER_CONFIG_FAIL
-			    + " the \"driverClassName\" property is not defined in the properties file for database "
-			    + database + " or the servlet name does not match the url pattern in your web.xml";
-		    // ServerLogger.getLogger().log(Level.WARNING, message);
-		    throw new SQLException(message);
-		}
-	    }
+                    String message = Tag.PRODUCT_USER_CONFIG_FAIL
+                            + " the \"driverClassName\" property is not defined in the properties file for database "
+                            + database + " or the Db Vendor is not supported in this version.";
+                    // ServerLogger.getLogger().log(Level.WARNING, message);
+                    throw new SQLException(message);
+                } else {
+                    String message = Tag.PRODUCT_USER_CONFIG_FAIL
+                            + " the \"driverClassName\" property is not defined in the properties file for database "
+                            + database + " or the servlet name does not match the url pattern in your web.xml";
+                    // ServerLogger.getLogger().log(Level.WARNING, message);
+                    throw new SQLException(message);
+                }
+            }
 
-	    dataSourceSet.put(database, dataSource);
+            dataSourceSet.put(database, dataSource);
 
-	}
-
-	Connection connection = dataSource.getConnection();
-	return connection;
+        }
+        Connection connection = null;
+        try {
+            connection = dataSource.getConnection();
+        } catch (PoolExhaustedException e)
+        {
+            System.out.println("=================== No more available connections in the Pool！！！！！！！！！！");
+            connection = ConnectionTempPool.getTempConnection(dataSource);
+            if(null==connection){
+                throw new SQLException("===================  No available tempBorrowCount in tempPool！！！！！！！！！！");
+            }
+        }
+        return connection;
     }
 
     /**
@@ -137,18 +147,18 @@ public class DefaultDatabaseConfigurator implements DatabaseConfigurator {
     @Override
     public void close(Connection connection) throws SQLException {
 
-	try {
-	    if (connection != null) {
-		connection.close();
-	    }
-	} catch (Exception e) {
-	    try {
-		getLogger().log(Level.WARNING, e.toString());
-	    } catch (Exception io) {
-		// Should never happen
-		io.printStackTrace();
-	    }
-	}
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (Exception e) {
+            try {
+                getLogger().log(Level.WARNING, e.toString());
+            } catch (Exception io) {
+                // Should never happen
+                io.printStackTrace();
+            }
+        }
 
     }
 
@@ -159,77 +169,77 @@ public class DefaultDatabaseConfigurator implements DatabaseConfigurator {
     @Override
     public int getMaxRows(String username, String database) throws IOException, SQLException {
 
-	int maxRows = 0;
-	if (properties == null) {
-	    File file = ServerSqlManager.getAceqlServerProperties();
-	    properties = TomcatStarterUtil.getProperties(file);
-	}
+        int maxRows = 0;
+        if (properties == null) {
+            File file = ServerSqlManager.getAceqlServerProperties();
+            properties = TomcatStarterUtil.getProperties(file);
+        }
 
-	String maxRowsStr = properties.getProperty("defaultDatabaseConfigurator.maxRows");
+        String maxRowsStr = properties.getProperty("defaultDatabaseConfigurator.maxRows");
 
-	// No limit if not set
-	if (maxRowsStr == null) {
-	    return 0;
-	}
+        // No limit if not set
+        if (maxRowsStr == null) {
+            return 0;
+        }
 
-	if (!StringUtils.isNumeric(maxRowsStr)) {
-	    throw new IllegalArgumentException("The defaultDatabaseConfigurator.maxRows property is not numeric: " + maxRowsStr);
-	}
+        if (!StringUtils.isNumeric(maxRowsStr)) {
+            throw new IllegalArgumentException("The defaultDatabaseConfigurator.maxRows property is not numeric: " + maxRowsStr);
+        }
 
-	maxRows = Integer.parseInt(maxRowsStr);
+        maxRows = Integer.parseInt(maxRowsStr);
 
-	return maxRows;
+        return maxRows;
     }
 
     /**
      * @return <code>user.home/.aceql-server-root/username</code>. (
-     *         {@code user.home} is the one of the servlet container).
+     * {@code user.home} is the one of the servlet container).
      */
     @Override
     public File getBlobsDirectory(String username) throws IOException, SQLException {
-	String userHome = System.getProperty("user.home");
-	if (!userHome.endsWith(File.separator)) {
-	    userHome += File.separator;
-	}
+        String userHome = System.getProperty("user.home");
+        if (!userHome.endsWith(File.separator)) {
+            userHome += File.separator;
+        }
 
-	// Escape invalid chars, mostly for Windows
-	username = UsernameConverter.fromSpecialChars(username);
+        // Escape invalid chars, mostly for Windows
+        username = UsernameConverter.fromSpecialChars(username);
 
-	userHome += ".aceql-server-root" + File.separator + username;
-	File userHomeDir = new File(userHome);
-	userHomeDir.mkdirs();
-	return userHomeDir;
+        userHome += ".aceql-server-root" + File.separator + username;
+        File userHomeDir = new File(userHome);
+        userHomeDir.mkdirs();
+        return userHomeDir;
     }
 
     /**
      * Creates a static {@code Logger} instance.
      *
      * @return a static {@code Logger} with properties:
-     *         <ul>
-     *         <li>Name: {@code "DefaultDatabaseConfigurator"}.</li>
-     *         <li>Output file pattern:
-     *         {@code user.home/.kawansoft/log/AceQL.log}.</li>
-     *         <li>Formatter: {@code SimpleFormatter}.</li>
-     *         <li>Limit: 200Mb.</li>
-     *         <li>Count (number of files to use): 2.</li>
-     *         </ul>
+     * <ul>
+     * <li>Name: {@code "DefaultDatabaseConfigurator"}.</li>
+     * <li>Output file pattern:
+     * {@code user.home/.kawansoft/log/AceQL.log}.</li>
+     * <li>Formatter: {@code SimpleFormatter}.</li>
+     * <li>Limit: 200Mb.</li>
+     * <li>Count (number of files to use): 2.</li>
+     * </ul>
      */
     @Override
     public Logger getLogger() throws IOException {
-	if (ACEQL_LOGGER != null) {
-	    return ACEQL_LOGGER;
-	}
+        if (ACEQL_LOGGER != null) {
+            return ACEQL_LOGGER;
+        }
 
-	File logDir = new File(SystemUtils.USER_HOME + File.separator + ".kawansoft" + File.separator + "log");
-	logDir.mkdirs();
+        File logDir = new File(SystemUtils.USER_HOME + File.separator + ".kawansoft" + File.separator + "log");
+        logDir.mkdirs();
 
-	String pattern = logDir.toString() + File.separator + "AceQL.log";
+        String pattern = logDir.toString() + File.separator + "AceQL.log";
 
-	ACEQL_LOGGER = Logger.getLogger(DefaultDatabaseConfigurator.class.getName());
-	Handler fh = new FileHandler(pattern, 200 * 1024 * 1024, 2, true);
-	fh.setFormatter(new NoFormatter());
-	ACEQL_LOGGER.addHandler(fh);
-	return ACEQL_LOGGER;
+        ACEQL_LOGGER = Logger.getLogger(DefaultDatabaseConfigurator.class.getName());
+        Handler fh = new FileHandler(pattern, 200 * 1024 * 1024, 2, true);
+        fh.setFormatter(new NoFormatter());
+        ACEQL_LOGGER.addHandler(fh);
+        return ACEQL_LOGGER;
 
     }
 
