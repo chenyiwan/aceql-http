@@ -21,10 +21,11 @@ public class ConnectionTempPool {
     private static AtomicInteger tempBorrowCount = new AtomicInteger(0);
     private static PoolProperties poolProperties;
     private static List<Map> tempConnList = new ArrayList<>();
+    //监听连接N分钟强行断开
     private static int checkTime=3;
 
     /**
-     * 监听连接10分钟强行断开
+     * 监听连接 ${checkTime} 分钟强行断开
      */
     static {
         new Thread(() -> {
@@ -53,7 +54,13 @@ public class ConnectionTempPool {
         }).start();
     }
 
-    public static Connection getTempConnection(DataSource dataSource) {
+
+    /**
+     * 获取一个临时数据库连接
+     * @param dataSource
+     * @return
+     */
+    public Connection getTempConnection(DataSource dataSource) {
         Connection conn = null;
         try {
             if (tempBorrowCount.get() > 50)
@@ -74,12 +81,26 @@ public class ConnectionTempPool {
     }
 
     /**
-     * 初始化
-     *
+     * 初始化连接池数据库配置信息
      * @param poolProperties
      */
-    public synchronized static void initPoolProperties(PoolProperties poolPropertiesTemp) {
+    public void initPoolProperties(PoolProperties poolPropertiesTemp) {
         if (null == poolProperties)
             poolProperties = poolPropertiesTemp;
+    }
+
+    /**
+     * 单例生成ConnectionTempPool
+     * @return ConnectionTempPool
+     */
+    public static ConnectionTempPool getInstance(){
+        return ReferenceClass.instance;
+    }
+
+    /**
+     * 静态内部类
+     */
+    private static class ReferenceClass{
+        private static ConnectionTempPool instance=new ConnectionTempPool();
     }
 }

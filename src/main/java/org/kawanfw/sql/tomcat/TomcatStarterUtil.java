@@ -293,8 +293,6 @@ public class TomcatStarterUtil {
         DataSource dataSource = new DataSource();
         dataSource.setPoolProperties(poolProperties);
 
-        ConnectionTempPool.initPoolProperties(poolProperties);
-
         Connection connection = null;
 
         try {
@@ -342,6 +340,7 @@ public class TomcatStarterUtil {
 
         //启动监控连接池连接线程
         new Thread(new PoolMonitor(dataSource,1000L*20)).start();
+        ConnectionTempPool.getInstance().initPoolProperties(poolProperties);
         TomcatSqlModeStore.setDataSource(database, dataSource);
 
     }

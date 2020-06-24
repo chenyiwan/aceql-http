@@ -129,7 +129,7 @@ public class DefaultDatabaseConfigurator implements DatabaseConfigurator {
         } catch (PoolExhaustedException e)
         {
             System.out.println("=================== No more available connections in the Pool！！！！！！！！！！");
-            connection = ConnectionTempPool.getTempConnection(dataSource);
+            connection = ConnectionTempPool.getInstance().getTempConnection(dataSource);
             if(null==connection){
                 throw new SQLException("===================  No available tempBorrowCount in tempPool！！！！！！！！！！");
             }
